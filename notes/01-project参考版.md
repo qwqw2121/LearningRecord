@@ -197,7 +197,7 @@ prefect 中，Task 负责**封装具体的业务操作**，Flow 负责组织和�
 我的项目中有三层状态管理。Prefect 自身负责跟踪 Flow 和 Task 的运行状态；我通过 Pydantic 定义了 PipelineState，用来**保存一次流水线运行的日期、成本控制参数和阶段统计信息**；
  *另外，数据库中的 NewsStatus 用于跟踪每条新闻的业务处理进度，例如正文提取、LLM 分析、向量化和事件聚类状态。*  有但是prefect/state里的没用到，只是列举
 
-**- LangGraph 中 State 如何在 Node 之间传递。**：
+- LangGraph 中 State 如何在 Node 之间传递。：
 核心理解：State 是整个 Graph 共享的状态对象，Node 读取当前 State，执行任务后返回状态更新，使用**MessagesState**：预置的消息状态，messages 字段自动追加，适合对话/Agent  
 LangGraph **通过 State 在不同 Node 之间共享上下文**。每个 Node 接收当前 State，执行相应逻辑后返回需要更新的字段，Graph 根据字段对应的 Reducer 合并状态，再将更新后的 State 传递给下一个 Node。
 在我的项目中，Agent 使用 messages 保存用户消息、模型回复和工具调用结果，因此模型能够根据之前的对话和工具返回结果继续决策。

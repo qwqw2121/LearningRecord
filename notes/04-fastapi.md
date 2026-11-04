@@ -14,7 +14,7 @@
 
 **定义：**
 
-HTTP 是客户端和服务端之间进行通信的应用层协议。客户端发送 HTTP 请求，服务端处理后返回 HTTP 响应。
+HTTP 是客户端和服务端之间进行通信的**应用层协议**。客户端发送 HTTP 请求，服务端处理后返回 HTTP 响应。
 
 一个 HTTP 请求通常包含：
 - 请求方法：GET、POST、PUT、DELETE 等。
@@ -31,7 +31,7 @@ GET 和 POST 是常见的 HTTP 请求方法：
 
 **目的：**
 
-HTTP 定义了客户端与服务端之间的通信规则。通过 GET 可以查询新闻，通过 POST 可以提交日报生成请求。
+HTTP 定义了客户端与服务端之间的**通信规则**。通过 GET 可以查询新闻，通过 POST 可以提交日报生成请求。
 
 **原理：**
 
@@ -68,7 +68,7 @@ Content-Type: application/json
 - GET 应主要用于读取资源，不应该依赖它执行有副作用的操作。
 - POST 常用于创建资源或触发任务。
 - GET 请求参数通常会出现在 URL 中，不适合传递敏感信息。
-- HTTPS 可以对传输过程进行加密，但不代表服务端自动完成了身份认证和授权。
+- HTTPS 可以对**传输过程**进行加密，但不代表服务端自动完成了身份认证和授权。
 
 **实践：**
 
@@ -103,9 +103,9 @@ GET 适合查询，POST 适合提交数据或触发操作。实际接口设计�
 
 **定义：**
 
-FastAPI 是基于 Python 的 Web API 框架，可以通过定义路由函数处理 HTTP 请求。
+FastAPI 是基于 Python 的 Web API 框架，可以通过定义**路由函数**处理 HTTP 请求。
 
-Pydantic 是用于数据校验和结构化的 Python 库。FastAPI 使用 Pydantic 模型校验请求体，并生成 API 文档。
+Pydantic 是用于**数据校验和结构化的** Python 库。FastAPI 使用 Pydantic 模型校验请求体，并生成 API 文档。
 
 **目的：**
 
@@ -119,14 +119,15 @@ FastAPI 主要解决：
 **原理：**
 
 一个简单的 FastAPI 接口：
-
+BaseModel 是 Pydantic 提供的基础模型类。FastAPI 使用它来定义请求数据的结构，并自动完成数据解析、类型校验和转换。
 ```python
 from fastapi import FastAPI
 from pydantic import BaseModel
 
 app = FastAPI()
 
-class NewsQuery(BaseModel):
+#规定客户端发送过来的 JSON 数据应该长什么样。
+class NewsQuery(BaseModel): #定义一个继承 BaseModel 的数据模型
     keyword: str
     limit: int = 10
 
@@ -138,15 +139,13 @@ def search_news(query: NewsQuery):
     }
 ```
 
-执行过程：
-
-1. 客户端发送 POST 请求。
-2. FastAPI 根据 URL 找到对应路由。
-3. 读取请求体中的 JSON。
-4. Pydantic 根据 `NewsQuery` 校验数据类型和字段。
-5. 校验通过后调用 `search_news()`。
-6. 将函数返回值转换为 JSON 响应。
-
+POST请求执行过程：
+1. 客户端发送请求  发送 URL、HTTP 方法和 JSON 请求体。
+2. FastAPI 路由匹配  根据 `@app.post("/api/news/search")` 找到 `search_news()`。
+3. 解析请求体  读取 JSON 数据，根据 `NewsQuery` 模型构造对象。
+4. Pydantic 数据校验  检查 `keyword` 是否存在、类型是否正确，`limit` 是否符合整数类型要求。
+5. 执行接口函数  将构造好的 `NewsQuery` 对象传给 `query` 参数。
+6. 返回响应   函数返回字典，FastAPI 将其转换为 JSON 响应。
 如果参数不符合要求，FastAPI 会返回参数校验错误，通常是 HTTP 422。
 
 **实践：**
@@ -170,13 +169,27 @@ def get_news(
         "keyword": keyword
     }
 ```
-
 其中：
 - `limit` 是查询参数。
 - `ge=1` 表示最小值为 1。
 - `le=100` 表示最大值为 100。
-- `keyword` 是可选参数。
+- `keyword` 是可选参数，可以是字符串，也可以是 None。
+Query 是 FastAPI 提供的参数声明工具。
+它主要用于：
+1. 声明 URL 查询参数。
+2. 设置默认值。
+3. 设置参数校验规则。
+4. 提供接口文档描述信息。
 
+## GET 请求执行流程
+GET /api/news?limit=5&keyword=LangGraph  ? 表示查询参数开始
+1. 客户端发送 GET 请求  参数放在 URL 中，而不是 JSON 请求体中。
+2. FastAPI 路由匹配   找到 `get_news()` 函数。
+3. 解析 URL 参数  读取 `limit=5` 和 `keyword=LangGraph`。
+4. 参数类型转换与校验  将 `limit` 从字符串 `"5"` 转换为整数 `5`，检查是否在 1～100 范围内。
+5. 执行接口函数   将解析后的参数传给 `get_news()`。
+6. 返回 JSON 响应   FastAPI 将返回的字典转换为 JSON。
+7. 
 **局限与取舍：**
 
 FastAPI 适合构建 Python API 服务，但它本身不是完整的业务系统。
@@ -247,7 +260,7 @@ def get_news(repo=Depends(get_news_repository)):
 
 **局限与取舍：**
 
-依赖注入可以降低耦合，但依赖层级过多会增加代码跳转和调试成本。
+**依赖注入可以降低耦合**，但依赖层级过多会增加代码跳转和调试成本。
 
 简单项目不需要过度封装，数据库连接、认证等公共资源适合使用依赖注入。
 
@@ -255,7 +268,7 @@ def get_news(repo=Depends(get_news_repository)):
 
 **定义：**
 
-SQLite 是一个轻量级关系型数据库，数据可以直接存储在本地文件中，不需要单独运行数据库服务。
+SQLite 是一个轻量级关系型数据库，数据可以直接存储在本地文件中，不需要单独运行**数据库服务**。
 
 SQL 是用于操作关系型数据库的语言。
 
@@ -364,9 +377,9 @@ SQLite 的优点：
 
 **定义：**
 
-索引是数据库为了提高查询效率建立的数据结构。
+索引是数据库为了**提高查询效率建立的数据结构**。
 
-事务（Transaction）是数据库执行的一组操作，这些操作要么全部成功，要么按照事务规则回滚。
+事务（Transaction）是**数据库执行的一组操作**，这些操作要么全部成功，要么按照事务规则回滚。
 
 **目的：**
 
@@ -389,15 +402,15 @@ ON news(published_at);
 
 ```sql
 SELECT * FROM news
-ORDER BY published_at DESC
+ORDER BY published_at DESC   
 LIMIT 10;
 ```
-
+#DESC：降序（descending）
 如果索引适用，数据库可以利用索引减少扫描和排序成本。
 
 事务通常具有 ACID 特性：
 
-- Atomicity：原子性，操作全部成功或全部回滚。
+- Atomicity：原子性，操作**全部成功或全部回滚**。
 - Consistency：一致性，事务前后满足数据库约束。
 - Isolation：隔离性，并发事务之间按照隔离规则执行。
 - Durability：持久性，提交后的数据能够持久保存。
@@ -472,7 +485,7 @@ WHERE id = 1;
 
 **目的：**
 
-ORM 希望减少重复 SQL 编写工作，让开发者使用面向对象的方式操作数据库。
+ORM 希望减少重复 SQL 编写工作，让开发者使用**面向对象的方式操作数据库**。
 
 直接 SQL 则提供更明确的查询控制能力。
 
@@ -546,7 +559,6 @@ ORM 局限：
 - [ ] 找到项目中数据库连接和 SQL 查询代码。
 - [ ] 查看新闻表有哪些索引。
 
-## Day 4｜FastAPI 与数据库
 
 ### 三、学习复盘
 
@@ -554,17 +566,77 @@ ORM 局限：
 
 - 一个 HTTP 请求从进入 FastAPI 到执行路由函数，中间经历了哪些步骤？
   
+  HTTP 请求首先由 Uvicorn 接收，然后交给 FastAPI 应用处理。FastAPI 会经过中间件，根据请求方法和路径匹配路由，解析请求参数和请求体，完成数据校验和依赖注入，最后执行路由函数。函数返回结果后，FastAPI 将其转换成 HTTP 响应返回客户端。
+
+客户端发送 HTTP 请求
+        ↓
+ASGI Server（Uvicorn）接收请求   
+        ↓
+交给 FastAPI 应用
+        ↓
+执行中间件（Middleware）
+        ↓
+路由匹配
+        ↓
+解析路径参数、查询参数、请求体
+        ↓
+执行 Pydantic 数据校验
+        ↓
+解析依赖项 Depends()
+        ↓
+执行路由函数
+        ↓
+处理返回值，生成 HTTP 响应
+        ↓
+中间件处理响应并返回客户端
+各步骤解释：
+1. Uvicorn：作为 ASGI 服务器，接收客户端的 HTTP 请求。
+2. Middleware：执行跨请求的公共逻辑，例如日志、身份验证、跨域处理。
+3. 路由匹配：根据请求方法和 URL 找到对应的接口函数。
+4. 参数解析：从 URL、请求体、请求头等位置提取数据。
+5. 数据校验：根据类型注解和 Pydantic 模型检查数据。
+6. 依赖注入：执行 Depends() 声明的依赖函数。
+7. 执行路由函数：进入真正的业务逻辑。
+8. 响应处理：将返回结果转换为 HTTP 响应。
+   
 - FastAPI 如何根据请求路径找到对应的路由？请求参数和请求体分别如何解析？
   
+  FastAPI 通过注册的路由表，根据 HTTP 请求方法和 URL 路径匹配接口。参数解析则主要依赖函数的类型注解和参数声明，例如 Path 从路径获取，Query 从 URL 查询字符串获取，Header 从请求头获取，Pydantic 的 BaseModel 通常用于解析 JSON 请求体。
+① 路由匹配   FastAPI 注册路由时，会记录：
+- HTTP 请求方法：GET、POST 等。
+- 请求路径：/api/news、/api/chat。
+- 对应的处理函数。
+收到请求后，根据请求方法和路径匹配对应的路由。
+② 请求参数解析   FastAPI 根据参数声明判断数据来源。
+| 参数类型  | 数据来源     | 示例                 |
+| --------- | ------------ | -------------------- |
+| Path      | URL 路径     | `/news/123`          |
+| Query     | URL 查询参数 | `?limit=10`          |
+| Header    | HTTP 请求头  | Authorization        |
+| Cookie    | Cookie       | session              |
+| BaseModel | JSON 请求体  | `{"question":"..."}` |
+
 - Pydantic 的类型校验发生在什么时候？校验失败后为什么会返回 422？
-  
+  Pydantic 的校验发生在路由函数正式执行之前。
+  FastAPI 会产生请求参数校验异常，默认转换为 HTTP 422 响应，路由函数不会正常执行。
+  为什么是 422？ 因为 HTTP 422 表示服务器理解了请求的内容和格式，但请求中包含的数据**无法通过语义校验**。
+FastAPI 会在执行路由函数之前，根据类型注解和 Pydantic 模型进行数据校验。如果字段缺失、类型不匹配或者不满足 Field 定义的约束，就会产生请求校验异常。FastAPI 默认将这类异常转换成 HTTP 422 响应，并返回具体的错误位置和原因。
+
 - `Depends()` 如何解析依赖关系？数据库连接为什么可以通过 `yield` 在请求结束后关闭？
-  
-- SQLite 的事务在什么情况下需要提交或回滚？如果程序执行到一半发生异常，数据会怎样？
-  
+  Depends() 是 FastAPI 的依赖注入机制。它允许接口函数声明自己需要什么资源，而不需要在每个接口内部重复创建。
+
+  Depends 是 FastAPI 的依赖注入机制。接口声明依赖后，FastAPI 会自动解析依赖关系、调用依赖函数，并将返回值注入接口参数。数据库连接通常使用 yield 返回给路由函数，路由处理结束后，FastAPI 会继续执行 yield 后面的清理代码，因此可以通过 finally 关闭连接，避免资源泄漏。
+
+补充：如果多个接口依赖同一个依赖函数，FastAPI 默认在同一次请求中缓存依赖结果（use_cache=True），避免重复创建相同依赖。
+
+- SQLite 的事务在什么情况下需要提交或回滚？如果程序执行到一半发生异常，数据会怎样？事务是数据库的一组操作
+  事务用于保证一组数据库操作的一致性。如果所有操作成功，就调用 commit 提交；如果中间发生异常，就调用 rollback 回滚尚未提交的修改。需要注意，已经提交的数据不会因为后续代码发生异常而自动撤销，因此应该合理划分事务边界。
+
 - 数据库索引为什么能加快查询？建立索引后，为什么写入操作可能变慢？
-  
+  索引通过建立额外的数据结构，例如 B-Tree，使数据库可以快速定位记录，减少全表扫描，因此能提高查询效率。但索引不是免费的，每次插入、删除或更新索引字段时，都需要同步维护索引结构，会增加写入成本和存储开销。所以需要根据实际查询场景选择合适的索引字段。
+
 - SQLite 和 Chroma 分别保存什么数据？如果新闻已经写入 SQLite，但 Embedding 写入 Chroma 失败，应该如何处理？
+  我的项目中 SQLite 和 Chroma 分别承担业务数据存储和向量检索存储的职责，两者之间没有天然的跨库事务。如果新闻已经写入 SQLite，但 Chroma 写入失败，我不会直接删除 SQLite 中的新闻，而是通过 SQLite 中的状态字段记录 embed_failed，后续由 Prefect 定时任务重新处理。为了避免重试产生重复向量，我会使用稳定的新闻 ID 作为 Chroma 的 ID，通过 upsert 实现幂等写入。同时可以增加定期对账机制，保证两个存储之间的数据最终一致。
 
 **需要面试前回顾的内容：**
 
