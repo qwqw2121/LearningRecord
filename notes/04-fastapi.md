@@ -638,6 +638,14 @@ FastAPI 会在执行路由函数之前，根据类型注解和 Pydantic 模型�
 - SQLite 和 Chroma 分别保存什么数据？如果新闻已经写入 SQLite，但 Embedding 写入 Chroma 失败，应该如何处理？
   我的项目中 SQLite 和 Chroma 分别承担业务数据存储和向量检索存储的职责，两者之间没有天然的跨库事务。如果新闻已经写入 SQLite，但 Chroma 写入失败，我不会直接删除 SQLite 中的新闻，而是通过 SQLite 中的状态字段记录 embed_failed，后续由 Prefect 定时任务重新处理。为了避免重试产生重复向量，我会使用稳定的新闻 ID 作为 Chroma 的 ID，通过 upsert 实现幂等写入。同时可以增加定期对账机制，保证两个存储之间的数据最终一致。
 
+「FastAPI 项目为什么要划分 api、schemas、services？」
+
+    这是为了实现代码分层和职责解耦。
+
+    api 层负责定义 HTTP 路由、接收请求和组织响应；schemas 层基于 Pydantic 定义请求和响应模型，实现数据校验；services 层负责具体业务逻辑，例如数据库查询、日报生成和 Agent 调用。
+
+    FastAPI 提供路由、请求处理和依赖注入等框架能力，Pydantic 负责数据模型和校验，services 则是普通 Python 业务代码。这样可以避免接口层和业务逻辑耦合，便于维护和测试。
+
 **需要面试前回顾的内容：**
 
 - GET 和 POST 的区别，以及 HTTP 请求和响应的基本结构。
