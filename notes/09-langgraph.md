@@ -14,16 +14,16 @@
 
 **定义：**
 
-LangGraph 是一个用于构建有状态、多步骤 Agent 工作流的框架。
+LangGraph 是一个用于构建**有状态、多步骤** Agent 工作流的**框架**。
 
 - StateGraph：定义整个图结构。
-- State：保存工作流执行过程中的共享状态。
-- Node：执行具体任务的节点，通常是一个函数。
+- State：保存工作流执行过程中的**共享状态**。
+- Node：**执行具体任务的节点**，通常是一个函数。
 - Edge：定义节点之间的执行关系。
 
 **目的：**
 
-将复杂的 Agent 执行流程拆分成多个节点，通过状态传递和边连接控制执行过程。
+将复杂的 Agent 执行流程拆分成**多个节点**，通过**状态传递和边连接**控制执行过程。
 
 **原理：**
 
@@ -38,26 +38,26 @@ Agent Node
    ├── 是 → Tool Node → Agent Node
    └── 否 → END
 ```
-
-Node 接收当前 State，执行任务后返回状态更新。Edge 决定下一个执行节点。
+Node 接收当前 State，执行任务后返回**状态更新**。Edge 决定下一个执行节点。
 
 **实践：**
 
 在 AI 资讯项目中，找到 LangGraph 工作流的构建代码，理解 State 保存了哪些信息，以及 Agent 节点如何调用工具。
+state: MessagesState
 
 **局限与取舍：**
 
-LangGraph 提供了较强的流程控制能力，但也增加了代码结构和状态管理复杂度。简单的单次模型调用不一定需要使用 LangGraph。
+LangGraph 提供了较强的**流程控制能力**，但也增加了代码结构和状态管理复杂度。简单的单次模型调用不一定需要使用 LangGraph。
 
 ### 2. 条件路由
 
 **定义：**
 
-条件路由是根据当前 State 或节点执行结果，动态决定下一个执行节点的机制。
+条件路由是根据**当前 State 或节点执行结果**，动态决定下一个执行节点的机制。
 
 **目的：**
 
-让工作流能够根据不同情况执行不同路径，而不是始终按照固定顺序执行。
+让工作流能够根据**不同情况执行不同路径**，而不是始终按照固定顺序执行。
 
 **原理：**
 
@@ -75,6 +75,24 @@ def route(state):
 **实践：**
 
 在 Agent 工作流中，模型返回工具调用请求时，流程进入工具节点；模型返回最终答案时，流程进入结束节点。
+```Python
+def route_after_agent(state: MessagesState):
+          last = state["messages"][-1]
+          tool_calls = getattr(last, "tool_calls", None)
+          if not tool_calls:
+                    return END
+          groups_present = {TOOL_GROUP_MAP.get(c["name"], GROUP_SEARCH) for c in tool_calls}
+          node_name = {GROUP_SEARCH: "tools_search", GROUP_REPORT: "tools_report"}
+          return [Send(node_name[g], state) for g in groups_present]
+```
+我的项目使用 route_after_agent 实现条件路由。
+
+主要逻辑：
+1. 获取最后一条 AIMessage。
+2. 检查其中是否存在 tool_calls。
+3. 如果不存在，返回 END。
+4. 如果存在，根据工具名称将调用分组。
+5. 使用 Send 将任务动态分发到对应的工具 Node。
 
 **局限与取舍：**
 
@@ -84,7 +102,7 @@ def route(state):
 
 **定义：**
 
-Reducer 是一种状态更新规则，用于决定节点返回的新数据如何与已有 State 合并。
+Reducer 是一种**状态更新规则**，用于**决定节点返回的新数据如何与已有 State 合并**。
 
 **目的：**
 
@@ -101,7 +119,7 @@ def merge_messages(old, new):
 
 如果 State 中的字段配置了 Reducer，节点更新该字段时会按照对应规则处理。
 
-没有配置 Reducer 时，通常采用新的值覆盖旧值的方式。
+没有配置 Reducer 时，通常采用**新的值覆盖旧值**的方式。
 
 **实践：**
 
@@ -115,7 +133,7 @@ Reducer 需要保证合并逻辑符合业务预期。如果重复追加相同消
 
 **定义：**
 
-ToolNode 是 LangGraph 提供的工具执行节点，可以根据模型产生的工具调用请求执行对应工具。
+ToolNode 是 LangGraph 提供的**工具执行节点**，可以根据模型产生的**工具调用请求执行对应工具**。
 
 **目的：**
 
@@ -144,9 +162,9 @@ ToolNode 负责执行工具，但不代表工具本身一定可靠。工具的�
 
 **定义：**
 
-普通链式调用通常按照预先定义的顺序执行多个处理步骤。
+普通链式调用通常按照**预先定义的顺序**执行多个处理步骤。
 
-LangGraph 则通过图结构组织节点，支持状态传递、条件路由、循环和持久化等能力。
+LangGraph 则通过**图结构组织节点**，支持**状态传递、条件路由、循环和持久化**等能力。
 
 **目的：**
 
@@ -168,7 +186,7 @@ A → B
     └── D → END
 ```
 
-LangGraph 可以根据条件在不同节点之间跳转。
+LangGraph 可以**根据条件在不同节点之间跳转**。
 
 **实践：**
 
@@ -186,7 +204,7 @@ LangGraph 适合有状态、需要动态路由的工作流。对于简单、固�
 
 **目的：**
 
-通过多个专业工具扩展单个 Agent 的能力，同时避免多 Agent 之间的任务分配和通信开销。
+通过多个专业工具扩展单个 Agent 的能力，同时避免**多 Agent 之间的任务分配和通信开销**。
 
 **原理：**
 
@@ -219,7 +237,7 @@ AI 资讯项目中，Agent 可以选择：
 
 单 Agent 架构简单，适合当前项目的工具规模和任务复杂度。随着任务复杂度增加，可能出现上下文过长、工具选择困难等问题。
 
-多 Agent 可以拆分专业任务，但会增加通信、调度、状态管理和调试成本。当前项目没有必要为了使用多 Agent 而增加复杂度。
+多 Agent 可以拆分**专业任务**，但会增加通信、调度、状态管理和调试成本。当前项目没有必要为了使用多 Agent 而增加复杂度。
 
 ## 二、实践任务
 
@@ -232,10 +250,53 @@ AI 资讯项目中，Agent 可以选择：
 **今天还没搞懂的内容：**
 
 - State 在多个 Node 之间如何传递和更新？多个 Node 更新同一个字段时如何处理？
-- 条件路由如何决定下一步执行哪个 Node？
+  State 是整个 LangGraph 工作流共享的状态，负责在不同 Node 之间传递数据。
+  每个 Node 接收当前 State，读取自己需要的数据，然后返回一个字典，表示本次需要更新的字段。LangGraph 会根据 State 中定义的 Reducer，将 Node 返回的更新合并到原有 State 中，再传递给后续 Node。
+  多个 Node 更新同一个字段时：由该字段定义的 **Reducer **决定如何合并更新。
 
+- 条件路由如何决定下一步执行哪个 Node？
+  条件路由是根据当前 State 中的数据，动态决定下一步执行哪个 Node。实现上，通常通过一个路由函数读取 State，判断当前状态，然后返回目标 Node 的名称，或者**返回 Send 对象进行动态任务分发**。
+执行逻辑：
+  - 如果模型返回了 Tool Call，就进入 tools Node。
+  - 如果模型没有返回 Tool Call，说明模型已经生成最终回答，结束流程。
+  
 **需要面试前回顾的内容：**
 
 - StateGraph、State、Node、Edge 分别是什么？它们之间是什么关系？
 - Reducer 有什么作用？为什么需要它？
 - LangGraph 相比普通链式调用有什么优势？项目为什么选择单 Agent + Tool Calling？
+
+- StateGraph、State、Node、Edge 分别是什么？它们之间是什么关系？
+ - StateGraph 是整个工作流的框架。
+ - State 是工作流运行过程中共享的数据。
+ - Node 是具体执行任务的函数。
+ - Edge 决定 Node 之间如何连接和流转。
+
+- Reducer 有什么作用？为什么需要它？
+   Reducer 是用于定义 State 字段更新和合并规则的机制。
+   Node 执行后会返回部分 State 更新，**Reducer 决定这些更新如何与原有 State 合并**。
+   常见情况：
+   1. 没有 Reducer：通常使用新值覆盖旧值。
+   2. 定义了 Reducer：按照指定规则合并新旧值。
+   3. 多个并行 Node 更新同一个字段：通过 Reducer 处理多个更新，避免简单覆盖造成数据丢失或并发更新冲突。
+我的项目直接使用 LangGraph 提供的 MessagesState。其中 messages 字段**使用 add_messages Reducer，负责合并 AIMessage、HumanMessage 和 ToolMessage**。这样 Agent 的消息和工具执行结果就能持续保存在 State 中，供下一轮 Agent 推理使用。
+
+- LangGraph 相比普通链式调用有什么优势？
+  普通链式调用通常按照固定顺序执行,适合简单、线性的任务。
+  LangGraph 则使用图结构组织工作流，可以定义多个 Node、条件路由、循环执行和状态更新，更适合复杂的 Agent 应用。
+
+- 项目为什么选择单 Agent + Tool Calling？
+  最初项目采用 Supervisor 多 Agent 架构，将任务拆分为多个 Agent，但实际开发中发现部分 Agent 的职责边界不够清晰，路由逻辑比较复杂，而且多次模型调用增加了系统开销。
+
+   后来分析项目需求，发现核心任务主要是新闻检索、日报读取和日报生成，这些任务可以通过工具完成，不需要多个 Agent 分别进行复杂推理。
+
+   因此，我将架构调整为单 Agent + Tool Calling：
+   - Agent：负责理解用户意图、决定调用什么工具、整合工具结果。
+   - Tools：负责具体业务操作，例如新闻检索、日报读取和日报生成。
+   - LangGraph：负责管理 Agent 和工具之间的执行流程。
+   这种架构职责更清晰，减少了不必要的 Agent 协作和模型调用开销，也降低了系统复杂度
+单 Agent + Tool Calling 并不意味着没有工作流编排。我的项目仍然使用 LangGraph 管理 Agent Node、工具 Node、条件路由和状态更新。
+
+   - State 负责存数据，Reducer 负责合并数据。
+   - Node 负责执行任务，Edge 负责控制执行路径。
+   - 条件路由负责动态选择下一步，Send 负责动态分发任务。

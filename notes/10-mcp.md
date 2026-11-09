@@ -14,17 +14,17 @@
 
 **定义：**
 
-- Checkpointer：LangGraph 提供的状态保存机制，用于在工作流执行过程中保存状态。
-- Thread ID：用于标识一个独立的执行会话。
+- Checkpointer：LangGraph 提供的**状态保存机制**，用于在工作流执行过程中保存状态。
+- Thread ID：用于标识**一个独立的执行会话**。
 - Checkpoint：某个执行时刻保存下来的状态快照。
 
 **目的：**
 
-让 Agent 能够保存执行过程中的状态，支持多轮对话、执行恢复和中断后继续运行。
+让 Agent 能够保存执行过程中的状态，支持**多轮对话、执行恢复和中断后继续运行。**
 
 **原理：**
 
-LangGraph 执行过程中会产生 State，Checkpointer 可以将 State 保存为 Checkpoint。
+LangGraph 执行过程中会产生 State，Checkpointer 可以将 State **保存为 Checkpoint**。
 
 不同 Thread ID 对应不同的执行会话，通过 Thread ID 可以找到对应的历史状态。
 
@@ -49,45 +49,51 @@ Checkpointer 保存 Checkpoint
 **实践：**
 
 可以使用 MemorySaver 编写最小 Demo：
-
 ```python
 from langgraph.checkpoint.memory import InMemorySaver
-
 checkpointer = InMemorySaver()
-
 graph = builder.compile(
-    checkpointer=checkpointer
-)
-
+    checkpointer=checkpointer)
+    #builder 是之前定义好的 StateGraph。
+#compile() 的作用是将构建好的 StateGraph 编译成可以执行的 Graph。
 config = {
     "configurable": {
-        "thread_id": "user_001"
-    }
-}
-
-result = graph.invoke(
+        "thread_id": "user_001"  }} #thread_id 用于标识一个独立的对话线程。
+result = graph.invoke(  #执行 Graph
     {"messages": []},
     config=config
 )
 ```
-
 使用相同的 Thread ID 再次调用，可以继续使用该会话保存的状态。
+给 LangGraph 工作流配置一个 Checkpointer，用于保存和恢复不同对话线程（Thread）的 State，实现多轮对话的状态持久化。
+InMemorySaver 是什么？ 它是 LangGraph 提供的**一种内存型 Checkpointer**，负责保存 Graph 执行过程中的状态快照（Checkpoint）。  可以理解为一个临时的状态存储器。
+例如，用户第一次提问：
+HumanMessage：今天有哪些 AI 新闻？
+AIMessage：我需要调用新闻检索工具。
+ToolMessage：检索到了 10 条新闻。
+AIMessage：以下是今天的新闻……
+LangGraph 可以通过 Checkpointer 保存执行过程中产生的状态。\注意：
+- InMemorySaver：**数据保存在内存中**。
+- 程序重启后：内存中的状态会丢失。
+- 适合开发测试，不适合需要长期保存对话状态的生产环境。
+生产环境可以使用 SQLite、PostgreSQL 等持久化 Checkpointer。
+
+因为两次调用使用相同的 thread_id，LangGraph 就能找到之前保存的状态，并在其基础上继续执行。
+这样就能实现多轮对话。
 
 **局限与取舍：**
 
 InMemorySaver 只适合内存中的临时状态保存，程序重启后数据会丢失。
-
 生产环境通常需要使用持久化存储，例如数据库 Checkpointer。
-
 Checkpointer 会增加状态管理成本，还需要考虑数据清理、会话隔离和敏感信息保护。
 
 ### 2. 状态持久化和多轮对话
 
 **定义：**
 
-状态持久化是将 Agent 执行过程中的状态保存到存储介质，使其在后续调用中能够恢复。
+状态持久化是将 Agent 执行过程中的**状态保存到存储介质**，使其在后续调用中能够恢复。
 
-多轮对话是指系统能够保留之前的对话上下文，并根据历史信息理解用户后续的问题。
+多轮对话是指**系统能够保留之前的对话上下文，并根据历史信息理解用户后续的问题**。
 
 **目的：**
 
@@ -114,8 +120,7 @@ Agent 检索新闻
    ↓
 结合上一轮结果继续回答
 ```
-
-LangGraph 通过 Checkpointer 保存状态，并根据 Thread ID 恢复对应会话。
+LangGraph **通过 Checkpointer 保存状态，并根据 Thread ID 恢复对应会话**。
 
 **实践：**
 
@@ -131,7 +136,7 @@ AI 资讯项目可以使用这种方式实现连续对话，但需要先确认�
 
 **局限与取舍：**
 
-状态持久化不等于长期记忆。它主要保存工作流执行状态，不代表 Agent 自动具备长期知识记忆能力。
+**状态持久化不等于长期记忆**。它主要保存**工作流执行状态**，不代表 Agent 自动具备长期知识记忆能力。
 
 对话历史过长也会增加 Token 消耗，需要考虑历史消息裁剪、摘要和上下文管理。
 
@@ -396,3 +401,14 @@ MCP 只是工具接入和通信协议，不能保证工具执行一定成功。
 - MCP 和普通 HTTP API 有什么区别？
 - Tool Schema 有什么作用？为什么服务端还需要进行参数校验？
 - Agent 如何通过 MCP 调用外部工具？
+  
+**LangGraph 中 Checkpointer 和 Thread ID 有什么作用？**
+
+可以这样回答：
+Checkpointer 是 LangGraph 的状态持久化机制，负责保存 Graph 执行过程中的 State 快照。Thread ID 用于标识独立的执行线程，LangGraph 根据 Thread ID 查找和恢复对应的历史状态。
+当用户进行多轮对话时，使用相同的 Thread ID，就可以在之前保存的状态基础上继续执行；不同的 Thread ID 则对应相互独立的对话状态。
+我的项目使用 AsyncSqliteSaver 将 Checkpoint 持久化到 SQLite，并在调用 ainvoke() 时传入 thread_id，实现对话状态的保存和恢复。
+最后记住三个概念：
+- Checkpointer：负责保存状态。
+- thread_id：负责区分不同对话线程。
+- Checkpoint：某个 Thread 在某个执行时刻保存下来的状态快照。
