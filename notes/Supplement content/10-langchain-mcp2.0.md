@@ -54,12 +54,12 @@ request_daily_report
 
 **定义：**
 
-- LangChain：LLM 应用的**组件库**，提供统一的模型接口、消息类型、工具定义、提示模板、输出解析等。
+- LangChain：LLM 应用的**组件库**，提供统一的**模型接口、消息类型、工具定义、提示模板、输出解析**等。
 - LangGraph：LLM 应用的**编排运行时**，用图来描述有状态、可循环的流程。
 
 **目的：**
 
-LangChain 解决「怎么用统一的方式调用各种模型和工具」；LangGraph 解决「多步骤、带循环和状态的流程怎么编排与持久化」。
+LangChain 解决「怎么用统一的方式调用各种模型和工具」；LangGraph 解决「**多步骤、带循环和状态**的流程怎么编排与持久化」。
 
 **原理：**
 
@@ -255,7 +255,7 @@ async def request_daily_report(report_date: str, force: bool = False) -> str:
 
 #### 3.3 MCP 的工具怎么变成 LangChain 工具（补充）
 
-MCP Server 返回的是 JSON Schema 格式的工具描述（见 3.1 的例子）。`load_mcp_tools` 会把每一个 MCP 工具包装成一个 LangChain 工具对象：
+MCP Server 返回的是 JSON Schema 格式的工具描述（见 3.1 的例子）。`load_mcp_tools` 会把**每一个 MCP 工具包装成一个 LangChain 工具对象**：
 
 ```text
 MCP 工具描述（name / description / inputSchema）
@@ -266,7 +266,7 @@ LangChain 工具对象
    └─ 调用时执行：session.call_tool(name, arguments)
 ```
 
-转换之后，MCP 工具和本地 `@tool` 在 LangGraph 里完全等价，所以你的 `TOOLS = list(mcp_tools) + [request_daily_report]` 才能把它们放进同一个列表。
+转换之后，**MCP 工具和本地 `@tool` 在 LangGraph 里完全等价**，所以你的 `TOOLS = list(mcp_tools) + [request_daily_report]` 才能把它们放进同一个列表。
 
 #### 3.4 bind_tools()：把工具「告诉」模型（补充）
 
@@ -339,14 +339,13 @@ response = llm_with_tools.invoke(messages)
 | 调用标识 | 无 id | 每个调用有 `id`，结果通过 `tool_call_id` 对应 |
 | 实际使用 | 旧接口 | 目前主流 |
 
-现在大多数场景里这两个词基本可以互换，面试时可以说「Function Calling 是 Tool Calling 的早期形态，现在通常指同一类能力」。
+现在大多数场景里这两个词基本可以互换，面试时可以说「**Function Calling 是 Tool Calling 的早期形态，现在通常指同一类能力**」。
 
-**重要认知：模型从不执行工具。** 模型只输出结构化的调用请求；真正执行的是你的代码（LangGraph 里是 `ToolNode`）。
+**重要认知：模型从不执行工具。** **模型只输出结构化的调用请求**；真正执行的是你的代码（LangGraph 里是 `ToolNode`）。
 
 **实践：**
 
 在你的项目里，Tool Calling 对应的完整闭环：
-
 ```text
 agent_llm 输出 AIMessage(tool_calls=[...])
    → route_after_agent 发现有 tool_calls
@@ -463,12 +462,12 @@ Client                                   Server
   │◀──────────── 结果 content[] ─────────────│
 ```
 
-传输方式（Transport）常见有两种：
+**传输方式（Transport）常见有两种：**
 
 | 传输 | 说明 | 你的项目 |
 |---|---|---|
-| stdio | Client 把 Server 作为子进程启动，通过标准输入输出通信 | 使用这种（`"transport": "stdio"`） |
-| Streamable HTTP | 通过 HTTP 通信，Server 可独立部署、被多个客户端访问 | 未使用 |
+| stdio | Client 把 Server 作为**子进程启动**，通过标准输入输出通信 | 使用这种（`"transport": "stdio"`） |
+| Streamable HTTP | 通过 HTTP 通信，Server **可独立部署、被多个客户端访问** | 未使用 |
 
 **stdio 的一个重要陷阱：** 标准输出被协议占用，MCP Server 里不能随便 `print()` 到 stdout，否则会破坏消息流。日志要输出到 stderr 或写文件。如果你的 `news_mcp.py` 里有 `print`，要核对一下。
 
@@ -479,11 +478,11 @@ Client                                   Server
 **定义：**
 
 - `MultiServerMCPClient`：`langchain-mcp-adapters` 提供的客户端，可以按配置同时管理多个 MCP Server 的连接。
-- `load_mcp_tools(session)`：从一个已建立的 MCP 会话里读取工具列表，并转换成 LangChain 工具。
+- `load_mcp_tools(session)`：**从一个已建立的 MCP 会话里读取工具列表，并转换成 LangChain 工具。**
 
 **目的：**
 
-省去手写 MCP 协议细节（握手、列出工具、调用、结果转换）的工作，让 MCP 工具能直接用在 LangChain / LangGraph 里。
+省去手写 **MCP 协议细节（握手、列出工具、调用、结果转换）的工作**，让 MCP 工具能直接用在 LangChain / LangGraph 里。
 
 **原理：**
 
@@ -491,8 +490,8 @@ Client                                   Server
 
 ```python
 client = MultiServerMCPClient({
-    "news_mcp": {                        # 自定义的 Server 名称，后面用它取会话
-        "command": sys.executable,       # 用当前 Python 解释器启动，避免找错 python
+    "news_mcp": {         # 自定义的 Server 名称，后面用它取会话
+        "command": sys.executable,   # 用当前 Python 解释器启动，避免找错 python
         "args": [MCP_SCRIPT_PATH],       # Server 脚本路径
         "transport": "stdio",            # 传输方式
         "env": os.environ.copy(),        # 把当前环境变量传给子进程（数据库路径、密钥等）
@@ -505,7 +504,7 @@ client = MultiServerMCPClient({
 | 方式 | 代码 | 会话特点 |
 |---|---|---|
 | 无状态 | `await client.get_tools()` | 每次调用工具时**新建**会话，调用完关闭。stdio 下就是每次拉起一个子进程 |
-| 持久会话 | `session = await client.session("news_mcp")` + `load_mcp_tools(session)` | 整个服务共用一个会话，一个子进程 |
+| 持久会话 | `session = await client.session("news_mcp")` + `load_mcp_tools(session)` | **整个服务共用一个会话，一个子进程** |
 
 对应你的代码：
 
@@ -520,10 +519,10 @@ return await client.get_tools()                 # 失败时回退为无状态
 
 **实践：**
 
-为什么优先持久会话：
+为什么**优先持久会话**：
 
-- 无状态方式每次调用工具都要启动一个 Python 子进程、重新 import 模块、可能还要重新连数据库，延迟明显增加。
-- 持久会话只启动一次，后续调用只是在已有的管道里发消息。
+- 无状态方式每次调用工具都要启动一个 Python 子进程、重新 import 模块、可能还要重新连数据库，**延迟明显增加**。
+- **持久会话只启动一次**，后续调用只是在已有的管道里发消息。
 
 **局限与取舍：**
 
@@ -537,7 +536,7 @@ return await client.get_tools()                 # 失败时回退为无状态
 
 **定义：**
 
-- MCP Session：Client 与 Server 之间一条已初始化的连接，在它存活期间可以多次发请求。
+- MCP Session：Client 与 Server 之间一条**已初始化的连接**，在它存活期间可以多次发请求。
 - `AsyncExitStack`：Python 标准库工具，用来**手动管理**一个或多个异步上下文管理器的进入和退出。
 
 **目的：**
@@ -566,15 +565,14 @@ await _exit_stack.aclose()                                                   # �
 
 | 写法 | 会话何时关闭 |
 |---|---|
-| `async with` | 离开代码块时自动关闭 |
+| `async with` | **离开代码块时自动关闭** |
 | `AsyncExitStack` | 你调用 `aclose()` 时才关闭 |
 
 退出时按**后进先出**的顺序关闭所有已注册的上下文。
 
 **实践：**
 
-你的生命周期管理：
-
+**你的生命周期管理：**
 ```text
 FastAPI 启动  → init_agent() → enter_async_context(...)  # 打开会话，启动 MCP 子进程
 ……处理请求……                    # 所有工具调用共用这一个会话
@@ -589,20 +587,27 @@ FastAPI 关闭  → close_agent() → _exit_stack.aclose()      # 关闭会话�
 - 底层使用的异步库对「在哪个任务里进入、在哪个任务里退出」有要求，进入和退出如果不在同一个异步任务里，可能出现类似 `cancel scope` 的报错。FastAPI 的 lifespan 里启动和关闭通常在同一任务，一般没问题；但放在不同的请求或后台任务里就可能出问题。
 - 更简单的替代写法：在 FastAPI 的 `lifespan` 里直接 `async with client.session(...)` 然后 `yield`，让会话天然跟随应用生命周期。
 
----
+LangGraph 的 checkpointer 负责把每个 thread_id 的对话状态（messages）存下来，这样下一次请求用同一个 thread_id 时，agent 能接着之前的上下文，服务重启后也不会丢。用 SQLite 作为存储，所以需要一个数据库连接，aiosqlite 的**连接内部会起一个后台线程来执行 SQLite 操作，所以它是一个需要显式关闭的资源**。
 
+conn 没有放进 _exit_stack，也没有存成全局变量，close_agent() 就没有办法关它。后果：
+  - 进程退出时，aiosqlite 的后台线程可能让进程卡住不退出（取决于版本）。
+  - SQLite 连接没有正常关闭，通常数据不会丢（每次写入都已提交），但不够干净
+已关闭
+```Python
+  if _checkpointer_conn:
+  await _checkpointer_conn.close()
+  _checkpointer_conn = None
+  ```
 ### 8. MCP 和普通 HTTP API 有什么区别？（原 Day 10 内容，完整保留并补充）
 
 **定义：**
 
 HTTP API 是应用之间通过 HTTP 请求和响应进行通信的接口。
-
 MCP 是面向 AI 应用的协议，规范了工具发现、工具调用以及资源和提示模板的交互方式。
 
 **目的：**
 
 HTTP API 解决通用服务之间的通信问题。
-
 MCP 进一步解决 AI 应用如何标准化地发现和使用外部能力的问题。
 
 **原理：**
@@ -640,15 +645,12 @@ MCP Server 执行
 **实践：**
 
 AI 资讯项目中，原本的 Python 新闻查询函数可以通过 MCP Server 封装成工具。
-
 Agent 不需要直接了解底层数据库查询逻辑，而是通过 MCP 工具调用获取新闻结果。
 
 **局限与取舍：**
 
 MCP 不是 HTTP API 的替代品，MCP Server 本身也可以通过 HTTP 等传输方式通信。
-
 如果只是普通业务服务之间的简单调用，直接使用 HTTP API 可能更加轻量。
-
 如果需要让不同 AI 客户端以统一方式发现和调用工具，MCP 更合适。
 
 #### 补充 8-1：对比表
@@ -668,15 +670,15 @@ MCP 不是 HTTP API 的替代品，MCP Server 本身也可以通过 HTTP 等传�
 收益：
 
 - 工具实现与 Agent 解耦：新闻检索逻辑放在 `news_mcp.py`，Agent 只关心工具名和参数。
-- 工具自带 Schema，Agent 启动时自动发现，不需要手写工具描述。
+- **工具自带 Schema，Agent 启动时自动发现，不需要手写工具描述**。
 - 同一个 MCP Server 之后可以被别的 MCP 客户端复用。
 
 代价：
 
 - 多一个子进程，多一层序列化和进程间通信。
-- 需要管理会话生命周期（见第 7 节）。
+- **需要管理会话生命周期**（见第 7 节）。
 - stdio 下标准输出不能乱用。
-- 调试链路变长（Agent → Client → Server → 数据库）。
+- 调试链路变长（**Agent → Client → Server → 数据库**）。
 
 面试时可以这样回答「为什么用 MCP」：我们这个项目工具数量不多，MCP 带来的最大价值是**解耦和标准化**，而不是性能；如果只是同一进程内调用，直接写 `@tool` 更轻量，我也在 `request_daily_report` 上就是这么做的。
 
@@ -736,9 +738,7 @@ MCP Server 负责执行具体新闻查询逻辑，并将结果返回给 Agent。
 **局限与取舍：**
 
 MCP 只是工具接入和通信协议，不能保证工具执行一定成功。
-
 需要处理连接失败、调用超时、参数错误和工具返回异常等情况。
-
 另外，外部工具可能涉及数据库写入或其他有副作用的操作，需要做好权限控制。
 
 #### 补充 9-1：对应到你的代码，上面 8 步分别发生在哪里
@@ -748,17 +748,17 @@ MCP 只是工具接入和通信协议，不能保证工具执行一定成功。
 | 1. 建立连接 | `init_agent()` → `_load_mcp_tools_persistent()` → `client.session("news_mcp")`（拉起子进程并完成握手） |
 | 2. 获取工具列表 | `load_mcp_tools(session)`（`tools/list`） |
 | 3. 把工具描述给模型 | `get_chat_model(..., tools=TOOLS)`（`bind_tools`） |
-| 4. 模型选工具、生成参数 | `agent_node` → `agent_llm.ainvoke(...)` → `AIMessage.tool_calls` |
+| 4. 模型选工具、生成参数 | `agent_node` → `agent_llm.ainvoke(...)` → ❗`AIMessage.tool_calls` |
 | 5. 交给 Client | `route_after_agent` → `Send` → `_run_tool_group` → `ToolNode.ainvoke` → 工具对象被调用 |
 | 6. 协议请求 Server | 适配层执行 `session.call_tool(name, arguments)`（`tools/call`） |
 | 7. Server 执行业务 | `news_mcp.py` 里的函数查询数据库并返回 |
 | 8. 结果交回模型 | 结果被包装成 `ToolMessage` → 回到 `agent_node` → 最终回答 |
 
----
+---❗
 
 ### 10. 完整调用链：从用户提问到 MCP Server 执行工具（补充）
 
-#### 10.1 总览图
+#### 10.1 总览图⭐
 
 ```text
 ┌──────────────────────── Agent 进程（MCP Host）────────────────────────┐
@@ -830,7 +830,7 @@ agent_node → AIMessage(tool_calls=[request_daily_report(...)])
 
 对 Agent 来说两类工具用法完全一致，区别只在工具对象内部：一个走 MCP 协议，一个直接调用本地函数。
 
-#### 10.4 各环节可能出问题的地方（和停止条件、超时的联系）
+#### 10.4 各环节可能出问题的地方（和停止条件、超时的联系）⭐
 
 | 环节 | 可能的问题 | 现有处理 |
 |---|---|---|
@@ -852,9 +852,7 @@ agent_node → AIMessage(tool_calls=[request_daily_report(...)])
 ```python
 # demo_news_mcp.py
 from mcp.server.fastmcp import FastMCP
-
 mcp = FastMCP("demo-news")
-
 
 @mcp.tool()
 def search_news(keyword: str, limit: int = 5) -> str:
@@ -862,23 +860,19 @@ def search_news(keyword: str, limit: int = 5) -> str:
     limit = max(1, min(limit, 20))          # 服务端自己校验范围，不依赖模型
     return "\n".join(f"{i + 1}. 关于「{keyword}」的新闻标题 {i + 1}" for i in range(limit))
 
-
 @mcp.resource("news://latest")
 def latest_news() -> str:
     """Resource 示例：一份可读取的数据。"""
     return "最新新闻列表（示例数据）"
-
 
 @mcp.prompt()
 def analyze_news(title: str) -> str:
     """Prompt 示例：可复用的提示模板。"""
     return f"请从事件、影响、风险三个角度分析这条新闻：{title}"
 
-
 if __name__ == "__main__":
     mcp.run(transport="stdio")       # 注意：stdio 模式下不要 print 到 stdout
 ```
-
 对照你项目里的 `news_mcp.py` 看这几点（**以你的实际文件为准**）：工具是怎么注册的、`description` 怎么写的、有没有参数校验、有没有 `print` 到 stdout、启动方式是不是 stdio。
 
 #### 11.2 用官方 SDK 直接跑一遍协议（看清握手、发现、调用）
@@ -888,7 +882,6 @@ if __name__ == "__main__":
 import asyncio, sys
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-
 
 async def main():
     params = StdioServerParameters(command=sys.executable, args=["demo_news_mcp.py"])
@@ -904,10 +897,9 @@ async def main():
 
 asyncio.run(main())
 ```
-
 运行后对照第 5 节补充 5-3 的时序图，能把「initialize → tools/list → tools/call」三步和输出一一对应。
 
-#### 11.3 用 LangChain 适配层（和你的项目一致）
+#### 11.3 用 LangChain 适配层（和你的项目一致）⭐
 
 ```python
 # demo_adapter_client.py
@@ -922,7 +914,6 @@ CONFIG = {
         "transport": "stdio",
     }
 }
-
 
 async def main():
     client = MultiServerMCPClient(CONFIG)
@@ -1021,7 +1012,7 @@ tool_node = ToolNode(tools)                 # 让图能执行工具
 **Q3：Function Calling 和 Tool Calling 有什么区别？**
 答：Tool Calling 是更通用的叫法，Function Calling 是早期形态，现在基本指同一类能力。关键点是模型只负责「提出调用请求」，执行由应用完成，结果通过 `tool_call_id` 交还给模型。
 
-**Q4：MCP 是什么？和 HTTP API 有什么区别？**
+**Q4：MCP 是什么？和 HTTP API 有什么区别？**⭐
 答：MCP 是面向 AI 应用的协议，规范了工具的发现、调用，以及资源和提示模板。HTTP API 是通用通信接口，调用方要事先知道接口约定；MCP 让客户端在运行时通过 `tools/list` 发现工具及其 Schema，并用统一的 `tools/call` 调用。它不是 HTTP 的替代品，MCP 也可以跑在 HTTP 之上。
 
 **Q5：Host、Client、Server 分别是什么？**
@@ -1030,7 +1021,7 @@ tool_node = ToolNode(tools)                 # 让图能执行工具
 **Q6：Tools、Resources、Prompts 的区别？**
 答：Tools 是可执行的操作，由模型决定调用；Resources 是可读取的数据，由应用选择加载；Prompts 是可复用的提示模板，由用户选择。我的项目只用了 Tools。
 
-**Q7：为什么要用持久会话和 `AsyncExitStack`？**
+**Q7：为什么要用持久会话和 `AsyncExitStack`？**⭐
 答：无状态方式每次调用工具都会启动一个新子进程，延迟高。持久会话让整个服务只启动一个子进程。但 `async with` 离开代码块就会关闭会话，所以用 `AsyncExitStack` 手动管理，在初始化时打开、在应用关闭时关闭。代价是必须保证关闭，否则子进程残留。
 
 **Q8：从用户提问到工具执行，完整经过哪些步骤？**
@@ -1039,5 +1030,5 @@ tool_node = ToolNode(tools)                 # 让图能执行工具
 **Q9：用 MCP 有什么代价？为什么 `request_daily_report` 没放进 MCP？**
 答：代价是多一个进程、多一层通信、会话生命周期要管理、stdio 下不能乱 print。`request_daily_report` 依赖本进程里的锁和后台任务，直接用本地 `@tool` 更简单（这是我根据代码做的判断，面试前我会再和自己的设计意图核对一次）。
 
-**Q10：工具调用失败怎么办？**
+**Q10：工具调用失败怎么办？**⭐
 答：分层处理：工具层做参数校验；工具组加 30 秒超时，超时返回 ToolMessage 而不是让图崩溃；图层有 `recursion_limit` 兜底。我也知道这个方案还缺业务层的循环保护和会话重建，已经有改进方案。

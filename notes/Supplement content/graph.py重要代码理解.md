@@ -26,7 +26,10 @@ def route_after_agent(state: MessagesState):
     # - 如果字典中不存在这个 key，就返回 default。
     #默认使用 GROUP_SEARCH？因为你的代码设计了一条规则：如果工具没有配置分组，就默认归入 search 工具组。
     node_name = {GROUP_SEARCH: "tools_search", GROUP_REPORT: "tools_report"}
+    #这是一个字典，GROUP_SEARCH 和 GROUP_REPORT 是键（key），"tools_search" 和 "tools_report" 是值（value）
     return [Send(node_name[g], state) for g in groups_present]
+    #node_name[g] 取的就是对应的值,Send("tools_search", state) 就是把这个字符串节点名作为目标节点传给 Send。
+    #tools_search\tools_report为图中节点
                                                       # ⑤ 每个组发一个 Send，让对应节点去执行
 ```
 **知识点：**
@@ -36,7 +39,7 @@ def route_after_agent(state: MessagesState):
 | 路由函数的作用                           | 只读 State，返回「下一步去哪」，自己不执行任何业务           |
 | 返回值的三种形式                         | 节点名、`END`、`Send` 列表。这里用了后两种                   |
 | `TOOL_GROUP_MAP.get(name, GROUP_SEARCH)` | 查不到的工具默认归入搜索组                                   |
-| `Send(节点名, 输入)`                     | 向指定节点投递一次任务。多个 `Send` 在**同一个 superstep 并行执行** |
+| **Send(节点名, 输入)**                     | 向指定节点投递一次任务。多个 `Send` 在**同一个 superstep 并行执行** |
 | 为什么用集合                             | 同一组里有 3 个调用，也只需要发 1 个 `Send`，组内的并发由 ToolNode 处理 |
 例子： 假设 LLM 一次输出了两个调用：
 
