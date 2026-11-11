@@ -222,6 +222,7 @@ process_news = timer(process_news)
    func(*args, **kwargs)，执行 time.sleep(1)，返回 10。
 7. 记录耗时并返回结果
    打印耗时，最后 return result。
+
 **装饰器本质上是一个函数，它接收另一个函数作为参数。**
 **wrapper 是包装函数**，负责在原函数执行前后增加功能。
 
